@@ -1,4 +1,7 @@
-numpy
-pandas
-scikit-learn
-tensorflow
+numpy>=2.3.3
+pandas>=2.3.2
+scikit-learn>=1.7.2
+tensorflow>=2.16.0
+keras>=3.0.0
+flask>=2.3.0
+waitress>=2.1.2

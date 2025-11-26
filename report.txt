@@ -1,0 +1,27 @@
+
+ANOMALY DETECTION SYSTEM - ANALYSIS REPORT
+Generated: 2025-11-26 15:37:58
+
+PERFORMANCE METRICS:
+  Accuracy:    0.9518
+  Precision:   0.3343
+  Recall:      0.1723
+  F1-Score:    0.2274
+
+CONFUSION MATRIX:
+  True Negatives:  15578
+  False Positives: 233
+  False Negatives: 562
+  True Positives:  117
+
+ERROR STATISTICS:
+  Mean:   0.000257
+  Std:    0.001311
+  Min:    0.000003
+  Max:    0.031153
+  Threshold: 0.002878
+
+DATA SUMMARY:
+  Total Samples: 16490
+  Anomalies Detected: 350
+  Normal Samples: 16140
