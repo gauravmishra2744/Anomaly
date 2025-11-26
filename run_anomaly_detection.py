@@ -23,26 +23,26 @@ print("=" * 80)
 try:
     print("\nLoading reconstruction errors...")
     reconstruction_errors = np.load('reconstruction_errors.npy')
-    print(f"  ✓ Reconstruction errors loaded: shape {reconstruction_errors.shape}")
+    print(f"  [OK] Reconstruction errors loaded: shape {reconstruction_errors.shape}")
     
     print("Loading anomaly threshold...")
     threshold = np.load('threshold.npy')[0]
-    print(f"  ✓ Threshold loaded: {threshold:.6f}")
+    print(f"  [OK] Threshold loaded: {threshold:.6f}")
     
     print("Loading test data...")
     X_test = np.load('X_test.npy')
-    print(f"  ✓ X_test loaded: shape {X_test.shape}")
+    print(f"  [OK] X_test loaded: shape {X_test.shape}")
     
     print("Loading test labels...")
     y_test = np.load('y_test.npy')
-    print(f"  ✓ y_test loaded: shape {y_test.shape}")
+    print(f"  [OK] y_test loaded: shape {y_test.shape}")
     
     print("Loading training data...")
     X_train = np.load('X_train.npy')
-    print(f"  ✓ X_train loaded: shape {X_train.shape}")
+    print(f"  [OK] X_train loaded: shape {X_train.shape}")
     
 except Exception as e:
-    print(f"\n✗ Error loading files: {e}")
+    print(f"\n[ERROR] Error loading files: {e}")
     exit(1)
 
 # ============================================================================
@@ -155,7 +155,7 @@ for i in range(min(30, len(reconstruction_errors))):
     error = reconstruction_errors[i]
     pred = "ANOMALY" if y_pred[i] == 1 else "NORMAL"
     actual = "ANOMALY" if y_test[i] == 1 else "NORMAL"
-    correct = "✓" if y_pred[i] == y_test[i] else "✗"
+    correct = "OK" if y_pred[i] == y_test[i] else "NO"
     
     print(f"{i:<6} {error:<12.6f} {threshold:<12.6f} {pred:<12} {actual:<10} {correct:<8}")
 
@@ -266,9 +266,9 @@ print(f"\nGenerated/Available Files:")
 for filename, description in model_files.items():
     if os.path.exists(filename):
         size = os.path.getsize(filename) / (1024 * 1024)  # Size in MB
-        print(f"  ✓ {filename:<30} ({size:>7.2f} MB) - {description}")
+        print(f"  [OK] {filename:<30} ({size:>7.2f} MB) - {description}")
     else:
-        print(f"  ✗ {filename:<30} (MISSING) - {description}")
+        print(f"  [MISSING] {filename:<30} - {description}")
 
 # ============================================================================
 # Step 10: Summary & Conclusions
@@ -334,9 +334,9 @@ print("\n" + "=" * 80)
 print("ANALYSIS COMPLETE")
 print("=" * 80)
 print("\nThis project successfully demonstrates:")
-print("  ✓ Time-series data preprocessing with sliding windows")
-print("  ✓ LSTM Autoencoder training for anomaly detection")
-print("  ✓ Reconstruction error computation")
-print("  ✓ Threshold-based anomaly classification")
-print("  ✓ Comprehensive performance evaluation")
+print("  [OK] Time-series data preprocessing with sliding windows")
+print("  [OK] LSTM Autoencoder training for anomaly detection")
+print("  [OK] Reconstruction error computation")
+print("  [OK] Threshold-based anomaly classification")
+print("  [OK] Comprehensive performance evaluation")
 print("\n" + "=" * 80)

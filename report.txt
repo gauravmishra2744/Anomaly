@@ -1,6 +1,8 @@
 
-ANOMALY DETECTION SYSTEM - ANALYSIS REPORT
-Generated: 2025-11-26 15:37:58
+================================================================================
+ANOMALY DETECTION SYSTEM - COMPREHENSIVE ANALYSIS REPORT
+Generated: 2025-11-26 21:59:26
+================================================================================
 
 PERFORMANCE METRICS:
   Accuracy:    0.9518
@@ -25,3 +27,34 @@ DATA SUMMARY:
   Total Samples: 16490
   Anomalies Detected: 350
   Normal Samples: 16140
+
+
+XAI INSIGHTS - TOP DETECTED ANOMALIES:
+================================================================================
+
+Anomaly #1 (Sample 2449):
+  Severity: LOW
+  Reason: LOW RISK: Reconstruction error 1.2x threshold. 4 peaks found. Anomaly concentrated in specific timesteps.
+  Contributing Factors: Spike detected in time series, Sudden drop detected
+
+Anomaly #2 (Sample 2450):
+  Severity: LOW
+  Reason: LOW RISK: Reconstruction error 1.3x threshold. 5 peaks found. Anomaly concentrated in specific timesteps.
+  Contributing Factors: Spike detected in time series, Sudden drop detected
+
+Anomaly #3 (Sample 2451):
+  Severity: LOW
+  Reason: LOW RISK: Reconstruction error 1.4x threshold. 5 peaks found. Anomaly concentrated in specific timesteps.
+  Contributing Factors: Spike detected in time series, Sudden drop detected
+
+Anomaly #4 (Sample 2452):
+  Severity: LOW
+  Reason: LOW RISK: Reconstruction error 1.4x threshold. 5 peaks found. Anomaly concentrated in specific timesteps.
+  Contributing Factors: Spike detected in time series, Sudden drop detected
+
+Anomaly #5 (Sample 2453):
+  Severity: LOW
+  Reason: LOW RISK: Reconstruction error 1.5x threshold. 5 peaks found. Anomaly concentrated in specific timesteps.
+  Contributing Factors: Spike detected in time series, Sudden drop detected
+
+================================================================================
