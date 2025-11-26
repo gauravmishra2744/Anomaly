@@ -29,11 +29,15 @@ except Exception as e:
 try:
     from integrated_system import IntegratedAnomalyDetectionSystem
     from xai_explainability import TimeSeriesExplainer
+    from genai_integration import EnhancedAnomalyAnalyzer, enhance_prediction_with_genai
+    from genai_explainer import explain_anomaly
     system = IntegratedAnomalyDetectionSystem()
-    print("[OK] System initialized")
+    genai_analyzer = EnhancedAnomalyAnalyzer()
+    print("[OK] System initialized with GenAI")
 except Exception as e:
     print(f"[ERROR] Error initializing system: {e}")
     system = None
+    genai_analyzer = None
 
 
 @app.route('/')
@@ -71,10 +75,11 @@ def dashboard():
 
 @app.route('/api/predict', methods=['POST'])
 def predict():
-    """Make prediction on sample with XAI explanation"""
+    """Make prediction on sample with XAI and GenAI explanation"""
     try:
         data = request.json
         sample_idx = data.get('sample_idx', 0)
+        use_genai = data.get('use_genai', True)
         
         if sample_idx >= len(X_test):
             return jsonify({'error': 'Invalid sample index'}), 400
@@ -90,6 +95,7 @@ def predict():
         explainer = TimeSeriesExplainer(window_size=60)
         explanation = explainer.explain_prediction(sample, error, threshold, pred)
         
+        # Base result with XAI
         result = {
             'sample_idx': sample_idx,
             'prediction': pred,
@@ -106,6 +112,34 @@ def predict():
             'contributing_factors': explanation['contributing_factors'],
             'xai_enabled': True
         }
+        
+        # Enhance with GenAI if available and requested
+        if use_genai and genai_analyzer:
+            try:
+                enhanced = genai_analyzer.analyze_sample_with_genai(
+                    sample, error, threshold, explanation
+                )
+                # Add GenAI fields to result
+                result.update({
+                    'genai_enabled': enhanced.get('genai_enabled', False),
+                    'genai_severity': enhanced.get('genai_severity', 'Medium'),
+                    'genai_classification': enhanced.get('genai_classification', 'unknown'),
+                    'genai_confidence': enhanced.get('genai_confidence', 75),
+                    'genai_root_cause': enhanced.get('genai_root_cause', 'Analysis unavailable'),
+                    'genai_recommendation': enhanced.get('genai_recommendation', 'Continue monitoring'),
+                    'genai_summary': enhanced.get('genai_summary', 'Anomaly detected'),
+                    'threat_level': enhanced.get('threat_level', 'Unknown'),
+                    'is_malicious': enhanced.get('is_malicious', False),
+                    'requires_immediate_action': enhanced.get('requires_immediate_action', False)
+                })
+                # Override severity with GenAI assessment
+                result['severity'] = enhanced.get('genai_severity', result['severity'])
+            except Exception as genai_error:
+                result['genai_enabled'] = False
+                result['genai_error'] = str(genai_error)
+        else:
+            result['genai_enabled'] = False
+        
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -228,12 +262,13 @@ def synthetic_anomalies():
 
 @app.route('/api/xai-explain', methods=['POST'])
 def xai_explain():
-    """Get detailed XAI explanation for a sample"""
+    """Get detailed XAI + GenAI explanation for a sample"""
     try:
         from xai_explainability import generate_explanation_report
         
         data = request.json
         sample_idx = data.get('sample_idx', 0)
+        use_genai = data.get('use_genai', True)
         
         if sample_idx >= len(X_test):
             return jsonify({'error': 'Invalid sample index'}), 400
@@ -249,6 +284,7 @@ def xai_explain():
         # Generate text report
         text_report = generate_explanation_report(sample, explanation, error, threshold)
         
+        # Base result with XAI
         result = {
             'sample_idx': sample_idx,
             'explanation': {
@@ -269,7 +305,131 @@ def xai_explain():
             'sample_data': sample.flatten().tolist()
         }
         
+        # Enhance with GenAI analysis
+        if use_genai and genai_analyzer:
+            try:
+                enhanced = genai_analyzer.analyze_sample_with_genai(
+                    sample, error, threshold, explanation
+                )
+                
+                # Add GenAI insights to result
+                result['genai_analysis'] = {
+                    'enabled': enhanced.get('genai_enabled', False),
+                    'root_cause': enhanced.get('genai_root_cause', ''),
+                    'severity': enhanced.get('genai_severity', 'Medium'),
+                    'classification': enhanced.get('genai_classification', 'unknown'),
+                    'confidence': enhanced.get('genai_confidence', 75),
+                    'recommendation': enhanced.get('genai_recommendation', ''),
+                    'summary': enhanced.get('genai_summary', ''),
+                    'threat_level': enhanced.get('threat_level', 'Unknown'),
+                    'is_malicious': enhanced.get('is_malicious', False),
+                    'requires_immediate_action': enhanced.get('requires_immediate_action', False),
+                    'threat_indicators': enhanced.get('genai_threat_indicators', [])
+                }
+                
+                # Update explanation severity with GenAI assessment
+                result['explanation']['severity'] = enhanced.get('genai_severity', result['explanation']['severity'])
+                
+            except Exception as genai_error:
+                result['genai_analysis'] = {
+                    'enabled': False,
+                    'error': str(genai_error)
+                }
+        else:
+            result['genai_analysis'] = {'enabled': False}
+        
         return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/genai-analyze', methods=['POST'])
+def genai_analyze():
+    """Direct GenAI analysis of anomaly data"""
+    try:
+        data = request.json
+        sample_idx = data.get('sample_idx', 0)
+        
+        if sample_idx >= len(X_test):
+            return jsonify({'error': 'Invalid sample index'}), 400
+        
+        sample = X_test[sample_idx]
+        error = reconstruction_errors[sample_idx]
+        
+        # Create GenAI payload
+        genai_payload = {
+            "window_values": sample.flatten().tolist(),
+            "reconstruction_error": float(error),
+            "error_threshold": float(threshold),
+            "xai_top_features": ["time_series_value", "temporal_pattern"],
+            "xai_top_timesteps": list(range(min(10, len(sample.flatten()))))
+        }
+        
+        # Get GenAI explanation
+        genai_result = explain_anomaly(genai_payload)
+        
+        # Add sample context
+        result = {
+            'sample_idx': sample_idx,
+            'genai_analysis': genai_result,
+            'sample_stats': {
+                'mean': float(np.mean(sample)),
+                'std': float(np.std(sample)),
+                'min': float(np.min(sample)),
+                'max': float(np.max(sample))
+            },
+            'error_context': {
+                'reconstruction_error': float(error),
+                'threshold': float(threshold),
+                'error_ratio': float(error / threshold) if threshold > 0 else 1.0
+            }
+        }
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/threat-report', methods=['POST'])
+def threat_report():
+    """Generate comprehensive threat report with GenAI insights"""
+    try:
+        data = request.json
+        start_idx = data.get('start_idx', 0)
+        batch_size = data.get('batch_size', 50)
+        
+        end_idx = min(start_idx + batch_size, len(X_test))
+        
+        if genai_analyzer:
+            # Analyze batch with GenAI
+            samples = [X_test[i] for i in range(start_idx, end_idx)]
+            errors = [reconstruction_errors[i] for i in range(start_idx, end_idx)]
+            
+            # Create mock XAI explanations for batch
+            xai_explanations = []
+            for i in range(len(samples)):
+                xai_explanations.append({
+                    'prediction': 'ANOMALY' if errors[i] > threshold else 'NORMAL',
+                    'confidence': min(0.95, 0.5 + (errors[i] / threshold) * 0.3),
+                    'contributing_factors': ['temporal_pattern', 'value_deviation']
+                })
+            
+            # Get enhanced analyses
+            analyses = genai_analyzer.batch_analyze_with_genai(
+                samples, errors, threshold, xai_explanations
+            )
+            
+            # Generate threat report
+            threat_report = genai_analyzer.generate_threat_report(analyses)
+            
+            return jsonify({
+                'threat_report': threat_report,
+                'analyzed_range': {'start': start_idx, 'end': end_idx},
+                'sample_analyses': analyses[:10]  # Return first 10 detailed analyses
+            })
+        else:
+            return jsonify({'error': 'GenAI analyzer not available'}), 500
+            
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -291,23 +451,43 @@ def export_report():
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
         
-        # Get XAI insights for sample anomalies
+        # Get XAI + GenAI insights for sample anomalies
         anomaly_indices = np.where(predictions == 1)[0][:5]  # Top 5 anomalies
         explainer = TimeSeriesExplainer(window_size=60)
         
-        xai_insights = "\n\nXAI INSIGHTS - TOP DETECTED ANOMALIES:\n" + "="*80 + "\n"
+        xai_insights = "\n\nXAI + GENAI INSIGHTS - TOP DETECTED ANOMALIES:\n" + "="*80 + "\n"
         for i, idx in enumerate(anomaly_indices, 1):
             sample = X_test[idx]
             error = reconstruction_errors[idx]
             explanation = explainer.explain_prediction(sample, error, threshold, 1)
+            
+            # Add GenAI analysis if available
+            genai_summary = "GenAI analysis unavailable"
+            if genai_analyzer:
+                try:
+                    enhanced = genai_analyzer.analyze_sample_with_genai(
+                        sample, error, threshold, explanation
+                    )
+                    genai_summary = enhanced.get('genai_summary', 'Analysis failed')
+                    threat_level = enhanced.get('threat_level', 'Unknown')
+                    is_malicious = enhanced.get('is_malicious', False)
+                except:
+                    genai_summary = "GenAI analysis failed"
+                    threat_level = "Unknown"
+                    is_malicious = False
+            
             xai_insights += f"\nAnomaly #{i} (Sample {idx}):\n"
-            xai_insights += f"  Severity: {explanation['severity']}\n"
-            xai_insights += f"  Reason: {explanation['reason']}\n"
+            xai_insights += f"  XAI Severity: {explanation['severity']}\n"
+            xai_insights += f"  XAI Reason: {explanation['reason']}\n"
             xai_insights += f"  Contributing Factors: {', '.join(explanation['contributing_factors'][:2])}\n"
+            if genai_analyzer:
+                xai_insights += f"  GenAI Threat Level: {threat_level}\n"
+                xai_insights += f"  Malicious: {'Yes' if is_malicious else 'No'}\n"
+                xai_insights += f"  GenAI Summary: {genai_summary}\n"
         
         report = f"""
 {'='*80}
-ANOMALY DETECTION SYSTEM - COMPREHENSIVE ANALYSIS REPORT
+ANOMALY DETECTION SYSTEM - COMPREHENSIVE ANALYSIS REPORT (XAI + GenAI)
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 {'='*80}
 

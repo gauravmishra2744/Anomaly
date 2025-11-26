@@ -451,6 +451,13 @@
                     <input type="number" id="sampleIdx" value="0" min="0" max="16489">
                 </div>
                 
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="useGenAI" checked style="margin-right: 8px;">
+                        Enable GenAI Intelligence Layer
+                    </label>
+                </div>
+                
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="predictSingle()">
                         <i class="fas fa-play"></i>
@@ -458,7 +465,11 @@
                     </button>
                     <button class="btn btn-primary" onclick="explainWithXAI()">
                         <i class="fas fa-brain"></i>
-                        XAI EXPLAIN
+                        XAI + GenAI
+                    </button>
+                    <button class="btn btn-primary" onclick="genaiAnalyze()">
+                        <i class="fas fa-robot"></i>
+                        GenAI ONLY
                     </button>
                     <button class="btn btn-secondary" onclick="predictBatch()">
                         <i class="fas fa-layer-group"></i>
@@ -467,6 +478,10 @@
                     <button class="btn btn-secondary" onclick="loadStatistics()">
                         <i class="fas fa-chart-line"></i>
                         STATISTICS
+                    </button>
+                    <button class="btn btn-secondary" onclick="generateThreatReport()">
+                        <i class="fas fa-shield-alt"></i>
+                        THREAT REPORT
                     </button>
                 </div>
                 
@@ -581,29 +596,76 @@
         
         function predictSingle() {
             const idx = parseInt(document.getElementById('sampleIdx').value);
+            const useGenAI = document.getElementById('useGenAI').checked;
             showLoading(true);
             
             fetch('/api/predict', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({sample_idx: idx})
+                body: JSON.stringify({sample_idx: idx, use_genai: useGenAI})
             })
             .then(r => r.json())
             .then(data => {
                 const status = data.prediction === 1 ? 'THREAT' : 'SECURE';
                 const statusClass = data.prediction === 1 ? 'anomaly' : 'normal';
-                const severityColor = data.severity === 'CRITICAL' ? '#ff0055' : 
-                                     data.severity === 'HIGH' ? '#ff6600' :
-                                     data.severity === 'MEDIUM' ? '#ffaa00' : '#00ff88';
+                const severityColor = data.severity === 'Critical' ? '#ff0055' : 
+                                     data.severity === 'High' ? '#ff6600' :
+                                     data.severity === 'Medium' ? '#ffaa00' : '#00ff88';
                 
                 let factorsHtml = '';
                 if (data.contributing_factors) {
                     factorsHtml = '<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,255,255,0.2);">';
-                    factorsHtml += '<strong style="color: #00ffff;">🔍 Contributing Factors:</strong><ul style="margin: 10px 0 0 20px; color: #8b9dc3;">';
+                    factorsHtml += '<strong style="color: #00ffff;">🔍 XAI Contributing Factors:</strong><ul style="margin: 10px 0 0 20px; color: #8b9dc3;">';
                     data.contributing_factors.forEach(f => {
                         factorsHtml += `<li style="margin: 5px 0;">${f}</li>`;
                     });
                     factorsHtml += '</ul></div>';
+                }
+                
+                // GenAI Analysis Section
+                let genaiHtml = '';
+                if (data.genai_enabled) {
+                    const threatColor = data.is_malicious ? '#ff0055' : '#00ff88';
+                    const actionColor = data.requires_immediate_action ? '#ff0055' : '#ffaa00';
+                    
+                    genaiHtml = `
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 10px; border-left: 4px solid #ff00ff;">
+                            <h4 style="color: #ff00ff; margin-bottom: 15px;">🤖 GenAI Intelligence Analysis</h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <strong style="color: #8b9dc3;">Classification:</strong>
+                                    <span style="color: ${threatColor}; font-weight: bold; text-transform: uppercase;">${data.genai_classification}</span>
+                                </div>
+                                <div>
+                                    <strong style="color: #8b9dc3;">Threat Level:</strong>
+                                    <span style="color: ${actionColor}; font-weight: bold;">${data.threat_level}</span>
+                                </div>
+                                <div>
+                                    <strong style="color: #8b9dc3;">GenAI Confidence:</strong>
+                                    <span style="color: #00ffff; font-family: Orbitron;">${data.genai_confidence}%</span>
+                                </div>
+                                <div>
+                                    <strong style="color: #8b9dc3;">Action Required:</strong>
+                                    <span style="color: ${actionColor}; font-weight: bold;">${data.requires_immediate_action ? 'YES' : 'NO'}</span>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #ff00ff;">🎯 Root Cause:</strong>
+                                <p style="color: #e0e7ff; margin: 8px 0; line-height: 1.5;">${data.genai_root_cause}</p>
+                            </div>
+                            <div>
+                                <strong style="color: #ff00ff;">💡 Recommendation:</strong>
+                                <p style="color: #e0e7ff; margin: 8px 0; line-height: 1.5;">${data.genai_recommendation}</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (data.genai_error) {
+                    genaiHtml = `
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(255,0,85,0.1); border-radius: 10px; border-left: 4px solid #ff0055;">
+                            <h4 style="color: #ff0055; margin-bottom: 10px;">⚠️ GenAI Analysis Failed</h4>
+                            <p style="color: #8b9dc3; font-size: 14px;">${data.genai_error}</p>
+                        </div>
+                    `;
                 }
                 
                 const html = `
@@ -625,7 +687,7 @@
                                 <span class="result-value">${data.threshold.toFixed(6)}</span>
                             </div>
                             <div class="result-item">
-                                <span class="result-label">Confidence:</span>
+                                <span class="result-label">XAI Confidence:</span>
                                 <span class="result-value">${(data.confidence * 100).toFixed(1)}%</span>
                             </div>
                             <div class="result-item">
@@ -637,9 +699,13 @@
                             <strong style="color: #00ffff;">💡 XAI Analysis:</strong> ${data.reason}
                         </div>
                         ${factorsHtml}
-                        <div style="margin-top: 15px; text-align: center;">
+                        ${genaiHtml}
+                        <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center;">
                             <button class="btn btn-secondary" onclick="explainWithXAI(${idx})" style="font-size: 12px;">
-                                <i class="fas fa-brain"></i> DETAILED XAI REPORT
+                                <i class="fas fa-brain"></i> DETAILED REPORT
+                            </button>
+                            <button class="btn btn-secondary" onclick="genaiAnalyze(${idx})" style="font-size: 12px;">
+                                <i class="fas fa-robot"></i> GenAI ONLY
                             </button>
                         </div>
                     </div>
@@ -655,20 +721,80 @@
         
         function explainWithXAI(idx = null) {
             const sampleIdx = idx !== null ? idx : parseInt(document.getElementById('sampleIdx').value);
+            const useGenAI = document.getElementById('useGenAI').checked;
             showLoading(true);
             
             fetch('/api/xai-explain', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({sample_idx: sampleIdx})
+                body: JSON.stringify({sample_idx: sampleIdx, use_genai: useGenAI})
             })
             .then(r => r.json())
             .then(data => {
                 const exp = data.explanation;
                 const statusClass = exp.prediction === 'ANOMALY' ? 'anomaly' : 'normal';
-                const severityColor = exp.severity === 'CRITICAL' ? '#ff0055' : 
-                                     exp.severity === 'HIGH' ? '#ff6600' :
-                                     exp.severity === 'MEDIUM' ? '#ffaa00' : '#00ff88';
+                const severityColor = exp.severity === 'Critical' ? '#ff0055' : 
+                                     exp.severity === 'High' ? '#ff6600' :
+                                     exp.severity === 'Medium' ? '#ffaa00' : '#00ff88';
+                
+                // GenAI Analysis Section for detailed report
+                let genaiDetailHtml = '';
+                if (data.genai_analysis && data.genai_analysis.enabled) {
+                    const ga = data.genai_analysis;
+                    const threatColor = ga.is_malicious ? '#ff0055' : '#00ff88';
+                    const actionColor = ga.requires_immediate_action ? '#ff0055' : '#ffaa00';
+                    
+                    let indicatorsHtml = '';
+                    if (ga.threat_indicators && ga.threat_indicators.length > 0) {
+                        indicatorsHtml = '<div style="margin-top: 15px;"><strong style="color: #ff00ff;">🚨 Threat Indicators:</strong><div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
+                        ga.threat_indicators.forEach(indicator => {
+                            indicatorsHtml += `<span style="background: rgba(255,0,255,0.2); color: #ff00ff; padding: 4px 8px; border-radius: 12px; font-size: 12px; border: 1px solid rgba(255,0,255,0.3);">${indicator}</span>`;
+                        });
+                        indicatorsHtml += '</div></div>';
+                    }
+                    
+                    genaiDetailHtml = `
+                        <div style="margin-top: 25px; padding: 20px; background: rgba(0,0,0,0.5); border-radius: 12px; border: 2px solid #ff00ff;">
+                            <h4 style="color: #ff00ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-robot"></i> GenAI Intelligence Analysis
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 5px;">CLASSIFICATION</div>
+                                    <div style="color: ${threatColor}; font-weight: bold; text-transform: uppercase; font-size: 16px;">${ga.classification}</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 5px;">THREAT LEVEL</div>
+                                    <div style="color: ${actionColor}; font-weight: bold; font-size: 16px;">${ga.threat_level}</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 5px;">CONFIDENCE</div>
+                                    <div style="color: #00ffff; font-weight: bold; font-family: Orbitron; font-size: 16px;">${ga.confidence}%</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 5px;">ACTION REQUIRED</div>
+                                    <div style="color: ${actionColor}; font-weight: bold; font-size: 16px;">${ga.requires_immediate_action ? 'IMMEDIATE' : 'MONITOR'}</div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,0,255,0.1); border-radius: 8px; border-left: 4px solid #ff00ff;">
+                                <strong style="color: #ff00ff; display: block; margin-bottom: 10px;">🎯 Root Cause Analysis:</strong>
+                                <p style="color: #e0e7ff; line-height: 1.6; margin: 0;">${ga.root_cause}</p>
+                            </div>
+                            <div style="padding: 15px; background: rgba(0,255,255,0.1); border-radius: 8px; border-left: 4px solid #00ffff;">
+                                <strong style="color: #00ffff; display: block; margin-bottom: 10px;">💡 Recommended Actions:</strong>
+                                <p style="color: #e0e7ff; line-height: 1.6; margin: 0;">${ga.recommendation}</p>
+                            </div>
+                            ${indicatorsHtml}
+                        </div>
+                    `;
+                } else if (data.genai_analysis && !data.genai_analysis.enabled) {
+                    genaiDetailHtml = `
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(255,165,0,0.1); border-radius: 10px; border-left: 4px solid #ffaa00;">
+                            <h4 style="color: #ffaa00; margin-bottom: 10px;">⚠️ GenAI Analysis Unavailable</h4>
+                            <p style="color: #8b9dc3; font-size: 14px;">GenAI analysis was not enabled or failed. Using XAI analysis only.</p>
+                        </div>
+                    `;
+                }
                 
                 let timestepsHtml = '<div style="margin-top: 15px;"><strong style="color: #00ffff;">⚡ Top Important Timesteps:</strong><div style="margin-top: 10px;">';
                 exp.top_important_timesteps.slice(0, 5).forEach((ts, i) => {
@@ -709,7 +835,7 @@
                 const html = `
                     <div class="result-card ${statusClass}">
                         <div class="result-header">
-                            <h3>🧠 XAI EXPLAINABILITY REPORT - SAMPLE #${data.sample_idx}</h3>
+                            <h3>🧠 ${data.genai_analysis && data.genai_analysis.enabled ? 'XAI + GenAI' : 'XAI'} ANALYSIS REPORT - SAMPLE #${data.sample_idx}</h3>
                             <span class="result-badge ${statusClass}">${exp.prediction}</span>
                         </div>
                         <div style="margin: 15px 0; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 4px solid ${severityColor};">
@@ -740,10 +866,11 @@
                         ${timestepsHtml}
                         ${patternHtml}
                         ${factorsHtml}
+                        ${genaiDetailHtml}
                     </div>
                 `;
                 document.getElementById('results').innerHTML = html;
-                showSuccess('XAI Explanation Generated Successfully');
+                showSuccess(data.genai_analysis && data.genai_analysis.enabled ? 'XAI + GenAI Analysis Complete' : 'XAI Analysis Complete');
                 showLoading(false);
             })
             .catch(err => {
@@ -835,12 +962,187 @@
                 });
         }
         
+        function genaiAnalyze(idx = null) {
+            const sampleIdx = idx !== null ? idx : parseInt(document.getElementById('sampleIdx').value);
+            showLoading(true);
+            
+            fetch('/api/genai-analyze', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sample_idx: sampleIdx})
+            })
+            .then(r => r.json())
+            .then(data => {
+                const ga = data.genai_analysis;
+                const statusClass = ga.classification === 'malicious' ? 'anomaly' : 'normal';
+                const severityColor = ga.severity === 'Critical' ? '#ff0055' : 
+                                     ga.severity === 'High' ? '#ff6600' :
+                                     ga.severity === 'Medium' ? '#ffaa00' : '#00ff88';
+                
+                let indicatorsHtml = '';
+                if (ga.threat_indicators && ga.threat_indicators.length > 0) {
+                    indicatorsHtml = '<div style="margin-top: 15px;"><strong style="color: #ff00ff;">🚨 Threat Indicators:</strong><div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
+                    ga.threat_indicators.forEach(indicator => {
+                        indicatorsHtml += `<span style="background: rgba(255,0,255,0.2); color: #ff00ff; padding: 4px 8px; border-radius: 12px; font-size: 12px; border: 1px solid rgba(255,0,255,0.3);">${indicator}</span>`;
+                    });
+                    indicatorsHtml += '</div></div>';
+                }
+                
+                const html = `
+                    <div class="result-card ${statusClass}">
+                        <div class="result-header">
+                            <h3>🤖 GenAI INTELLIGENCE REPORT - SAMPLE #${data.sample_idx}</h3>
+                            <span class="result-badge ${statusClass}">${ga.classification.toUpperCase()}</span>
+                        </div>
+                        <div style="margin: 15px 0; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 10px; border-left: 4px solid ${severityColor};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <strong style="color: ${severityColor}; font-size: 18px;">Severity: ${ga.severity}</strong>
+                                <span style="color: #00ffff; font-family: Orbitron; font-size: 16px;">Confidence: ${ga.confidence}%</span>
+                            </div>
+                        </div>
+                        <div class="result-details">
+                            <div class="result-item">
+                                <span class="result-label">Error:</span>
+                                <span class="result-value">${data.error_context.reconstruction_error.toFixed(6)}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Threshold:</span>
+                                <span class="result-value">${data.error_context.threshold.toFixed(6)}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Error Ratio:</span>
+                                <span class="result-value">${data.error_context.error_ratio.toFixed(2)}x</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Classification:</span>
+                                <span class="result-value" style="color: ${ga.classification === 'malicious' ? '#ff0055' : '#00ff88'}; text-transform: uppercase;">${ga.classification}</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(255,0,255,0.1); border-radius: 8px; border-left: 4px solid #ff00ff;">
+                            <strong style="color: #ff00ff; display: block; margin-bottom: 10px;">🎯 Root Cause Analysis:</strong>
+                            <p style="color: #e0e7ff; line-height: 1.6; margin: 0;">${ga.root_cause}</p>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: rgba(0,255,255,0.1); border-radius: 8px; border-left: 4px solid #00ffff;">
+                            <strong style="color: #00ffff; display: block; margin-bottom: 10px;">💡 Recommended Actions:</strong>
+                            <p style="color: #e0e7ff; line-height: 1.6; margin: 0;">${ga.recommendation}</p>
+                        </div>
+                        ${indicatorsHtml}
+                    </div>
+                `;
+                document.getElementById('results').innerHTML = html;
+                showSuccess('GenAI Analysis Complete');
+                showLoading(false);
+            })
+            .catch(err => {
+                showError('Error in GenAI analysis');
+                showLoading(false);
+            });
+        }
+        
+        function generateThreatReport() {
+            const startIdx = parseInt(document.getElementById('sampleIdx').value);
+            showLoading(true);
+            
+            fetch('/api/threat-report', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({start_idx: startIdx, batch_size: 50})
+            })
+            .then(r => r.json())
+            .then(data => {
+                const report = data.threat_report;
+                const summary = report.threat_summary;
+                
+                let indicatorsHtml = '';
+                if (report.top_threat_indicators && report.top_threat_indicators.length > 0) {
+                    indicatorsHtml = '<div style="margin-top: 20px;"><h4 style="color: #ff0055; margin-bottom: 15px;">🚨 Top Threat Indicators</h4>';
+                    report.top_threat_indicators.forEach(item => {
+                        const percentage = (item.count / summary.total_samples_analyzed * 100).toFixed(1);
+                        indicatorsHtml += `
+                            <div style="margin: 10px 0; padding: 10px; background: rgba(255,0,85,0.1); border-radius: 8px; border-left: 3px solid #ff0055;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #e0e7ff; font-weight: bold;">${item.indicator}</span>
+                                    <span style="color: #ff0055; font-family: Orbitron;">${item.count} (${percentage}%)</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    indicatorsHtml += '</div>';
+                }
+                
+                let recommendationsHtml = '';
+                if (report.recommendations && report.recommendations.length > 0) {
+                    recommendationsHtml = '<div style="margin-top: 20px;"><h4 style="color: #00ffff; margin-bottom: 15px;">💡 Security Recommendations</h4>';
+                    report.recommendations.forEach((rec, index) => {
+                        const priority = rec.includes('IMMEDIATE') ? '#ff0055' : rec.includes('HIGH') ? '#ff6600' : '#00ffff';
+                        recommendationsHtml += `
+                            <div style="margin: 8px 0; padding: 12px; background: rgba(0,255,255,0.1); border-radius: 8px; border-left: 3px solid ${priority};">
+                                <span style="color: #e0e7ff; line-height: 1.5;">${index + 1}. ${rec}</span>
+                            </div>
+                        `;
+                    });
+                    recommendationsHtml += '</div>';
+                }
+                
+                const riskColor = summary.risk_score > 70 ? '#ff0055' : summary.risk_score > 40 ? '#ff6600' : '#00ff88';
+                
+                const html = `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3>🛡️ COMPREHENSIVE THREAT REPORT</h3>
+                            <span class="result-badge" style="background: linear-gradient(135deg, ${riskColor} 0%, #ff00ff 100%); color: white;">RISK: ${summary.risk_score}%</span>
+                        </div>
+                        <div style="margin: 20px 0;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 8px;">SAMPLES ANALYZED</div>
+                                    <div style="color: #00ffff; font-size: 24px; font-weight: bold; font-family: Orbitron;">${summary.total_samples_analyzed}</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 8px;">MALICIOUS SAMPLES</div>
+                                    <div style="color: #ff0055; font-size: 24px; font-weight: bold; font-family: Orbitron;">${summary.malicious_samples}</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 8px;">CRITICAL THREATS</div>
+                                    <div style="color: #ff0055; font-size: 24px; font-weight: bold; font-family: Orbitron;">${summary.critical_severity}</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                                    <div style="color: #8b9dc3; font-size: 12px; margin-bottom: 8px;">HIGH THREATS</div>
+                                    <div style="color: #ff6600; font-size: 24px; font-weight: bold; font-family: Orbitron;">${summary.high_severity}</div>
+                                </div>
+                            </div>
+                            <div style="margin: 20px 0; padding: 20px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 2px solid ${riskColor};">
+                                <h4 style="color: ${riskColor}; margin-bottom: 15px; text-align: center;">🎯 OVERALL RISK ASSESSMENT</h4>
+                                <div style="text-align: center;">
+                                    <div style="color: ${riskColor}; font-size: 36px; font-weight: bold; font-family: Orbitron; margin-bottom: 10px;">${summary.risk_score}%</div>
+                                    <div style="color: #8b9dc3;">Risk Score (${summary.risk_score > 70 ? 'HIGH RISK' : summary.risk_score > 40 ? 'MEDIUM RISK' : 'LOW RISK'})</div>
+                                </div>
+                            </div>
+                        </div>
+                        ${indicatorsHtml}
+                        ${recommendationsHtml}
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(0,255,255,0.1); border-radius: 8px; text-align: center;">
+                            <div style="color: #8b9dc3; font-size: 14px;">Report generated with GenAI Intelligence • Analysis Quality: ${report.analysis_quality}</div>
+                            <div style="color: #00ffff; font-size: 12px; margin-top: 5px;">GenAI Enabled: ${report.genai_enabled_samples}/${summary.total_samples_analyzed} samples</div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('results').innerHTML = html;
+                showSuccess(`Threat Report Generated - Risk Score: ${summary.risk_score}%`);
+                showLoading(false);
+            })
+            .catch(err => {
+                showError('Error generating threat report');
+                showLoading(false);
+            });
+        }
+        
         function exportReport() {
             showLoading(true);
             fetch('/api/export-report')
                 .then(r => r.json())
                 .then(data => {
-                    showSuccess(data.message + ' (with XAI insights)');
+                    showSuccess(data.message + ' (with XAI + GenAI insights)');
                     showLoading(false);
                 })
                 .catch(err => {
