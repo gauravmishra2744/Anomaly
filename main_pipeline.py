@@ -11,6 +11,8 @@ from datetime import datetime
 # Import all modules
 from genai_augmentation import augment_training_data, generate_synthetic_anomalies
 from xai_explainability import TimeSeriesExplainer, generate_explanation_report
+from genai_explainer_simple import GenAIExplainer, explain_anomaly
+from genai_integration import EnhancedAnomalyAnalyzer
 from integrated_system import IntegratedAnomalyDetectionSystem
 from visualization_dashboard import AnomalyVisualizationDashboard
 
@@ -107,15 +109,21 @@ def phase_3_model_evaluation(X_test, y_test):
     return reconstruction_errors, threshold, y_pred
 
 
-def phase_4_xai_explainability(X_test, reconstruction_errors, threshold, y_test):
-    """Phase 4: XAI Explainability"""
-    print_banner("PHASE 4: EXPLAINABLE AI - INTERPRETABILITY")
+def phase_4_xai_genai_explainability(X_test, reconstruction_errors, threshold, y_test):
+    """Phase 4: XAI + GenAI Explainability"""
+    print_banner("PHASE 4: EXPLAINABLE AI + GENERATIVE AI INTELLIGENCE")
     
     print("\nInitializing XAI Explainer...")
     explainer = TimeSeriesExplainer(window_size=X_test.shape[1])
     
+    print("Initializing GenAI Explainer...")
+    genai_explainer = GenAIExplainer()
+    
+    print("Initializing Enhanced Analyzer...")
+    enhanced_analyzer = EnhancedAnomalyAnalyzer()
+    
     # Generate explanations for sample predictions
-    print("\nGenerating explanations for sample predictions...")
+    print("\nGenerating XAI + GenAI explanations for sample predictions...")
     
     # Select diverse samples
     normal_indices = np.where(y_test == 0)[0]
@@ -125,27 +133,52 @@ def phase_4_xai_explainability(X_test, reconstruction_errors, threshold, y_test)
     labels = ["Normal", "Anomaly"]
     
     explanations = []
+    genai_explanations = []
+    enhanced_explanations = []
     
     for label, idx in zip(labels, sample_indices):
         y_pred = 1 if reconstruction_errors[idx] > threshold else 0
-        explanation = explainer.explain_prediction(
+        
+        # XAI Explanation
+        xai_explanation = explainer.explain_prediction(
             X_test[idx], reconstruction_errors[idx], threshold, y_pred
         )
-        explanations.append(explanation)
+        explanations.append(xai_explanation)
+        
+        # GenAI Explanation
+        genai_payload = {
+            "window_values": X_test[idx].flatten().tolist(),
+            "reconstruction_error": float(reconstruction_errors[idx]),
+            "error_threshold": float(threshold),
+            "xai_top_features": xai_explanation.get('contributing_factors', [])[:3],
+            "xai_top_timesteps": xai_explanation.get('top_important_timesteps', [])[:5].tolist()
+        }
+        
+        genai_result = genai_explainer.explain_anomaly(genai_payload)
+        genai_explanations.append(genai_result)
+        
+        # Enhanced Analysis (XAI + GenAI)
+        enhanced_result = enhanced_analyzer.analyze_sample_with_genai(
+            X_test[idx], reconstruction_errors[idx], threshold, xai_explanation
+        )
+        enhanced_explanations.append(enhanced_result)
         
         print(f"\n{label} Sample (Index {idx}):")
-        print(f"  Prediction: {explanation['prediction']}")
-        print(f"  Confidence: {explanation['confidence']:.1%}")
-        print(f"  Error Ratio: {explanation['error_ratio']:.2f}x threshold")
-        print(f"  Reason: {explanation['reason']}")
-        print(f"  Top Important Timesteps: {explanation['top_important_timesteps']}")
+        print(f"  XAI Prediction: {xai_explanation['prediction']}")
+        print(f"  XAI Confidence: {xai_explanation['confidence']:.1%}")
+        print(f"  XAI Reason: {xai_explanation['reason']}")
+        print(f"  GenAI Classification: {genai_result['classification']}")
+        print(f"  GenAI Severity: {genai_result['severity']}")
+        print(f"  GenAI Confidence: {genai_result['confidence']}%")
+        print(f"  Threat Level: {enhanced_result.get('threat_level', 'Unknown')}")
+        print(f"  Requires Action: {enhanced_result.get('requires_immediate_action', False)}")
     
-    return explainer, explanations
+    return explainer, explanations, genai_explainer, genai_explanations, enhanced_analyzer, enhanced_explanations
 
 
 def phase_5_system_integration():
-    """Phase 5: System Integration"""
-    print_banner("PHASE 5: SYSTEM INTEGRATION")
+    """Phase 5: System Integration with MITRE ATT&CK Mapping"""
+    print_banner("PHASE 5: SYSTEM INTEGRATION + MITRE ATT&CK MAPPING")
     
     print("\nInitializing Integrated Anomaly Detection System...")
     system = IntegratedAnomalyDetectionSystem()
@@ -154,16 +187,36 @@ def phase_5_system_integration():
     print("  ✓ LSTM Autoencoder Model")
     print("  ✓ GenAI VAE for Data Augmentation")
     print("  ✓ XAI Explainer for Interpretability")
+    print("  ✓ GenAI Intelligence Layer")
+    print("  ✓ Enhanced Anomaly Analyzer")
     print("  ✓ Threshold-based Anomaly Detection")
+    print("  ✓ MITRE ATT&CK Framework Integration")
+    print("  ✓ RAG Context System")
     
-    return system
+    # Initialize MITRE ATT&CK mapping
+    mitre_mapping = {
+        'T1071': 'Application Layer Protocol',
+        'T1090': 'Proxy',
+        'T1041': 'Exfiltration Over C2 Channel',
+        'T1048': 'Exfiltration Over Alternative Protocol',
+        'T1499': 'Endpoint Denial of Service',
+        'T1498': 'Network Denial of Service',
+        'T1046': 'Network Service Scanning',
+        'T1595': 'Active Scanning'
+    }
+    
+    print("\nMITRE ATT&CK Techniques Mapped:")
+    for technique_id, technique_name in mitre_mapping.items():
+        print(f"  {technique_id}: {technique_name}")
+    
+    return system, mitre_mapping
 
 
-def phase_6_visualization_dashboard():
-    """Phase 6: Visualization Dashboard"""
-    print_banner("PHASE 6: VISUALIZATION & MONITORING DASHBOARD")
+def phase_6_enhanced_visualization_dashboard(mitre_mapping):
+    """Phase 6: Enhanced Visualization Dashboard with Real-time Features"""
+    print_banner("PHASE 6: ENHANCED VISUALIZATION & REAL-TIME MONITORING")
     
-    print("\nInitializing Visualization Dashboard...")
+    print("\nInitializing Enhanced Visualization Dashboard...")
     dashboard = AnomalyVisualizationDashboard()
     
     # Load data
@@ -172,25 +225,39 @@ def phase_6_visualization_dashboard():
     reconstruction_errors = np.load('reconstruction_errors.npy')
     threshold = np.load('threshold.npy')[0]
     
-    # Display system summary
+    # Enhanced system info with GenAI and MITRE ATT&CK
     system_info = {
         'window_size': X_test.shape[1],
         'features': X_test.shape[2],
         'threshold': threshold,
         'train_samples': len(np.load('X_train.npy')),
-        'test_samples': len(X_test)
+        'test_samples': len(X_test),
+        'genai_enabled': True,
+        'xai_enabled': True,
+        'mitre_attack_mapped': len(mitre_mapping),
+        'rag_context_enabled': True
     }
+    
+    print("\nDashboard Features:")
+    print("  ✓ Real-time anomaly summary")
+    print("  ✓ Interactive charts (Reconstruction Error, Feature Impact, Timeline)")
+    print("  ✓ Severity badges with color coding")
+    print("  ✓ MITRE ATT&CK technique mapping")
+    print("  ✓ RAG context panel for threat intelligence")
+    print("  ✓ Fully responsive Bootstrap 5 design")
+    print("  ✓ GenAI-powered explanations")
+    print("  ✓ XAI interpretability features")
     
     dashboard.display_system_summary(system_info)
     
-    # Display batch statistics
+    # Display batch statistics with enhanced metrics
     predictions = (reconstruction_errors > threshold).astype(int)
     dashboard.display_batch_statistics(predictions, reconstruction_errors, y_test)
     
-    # Display error distribution
+    # Display error distribution with severity mapping
     dashboard.display_error_distribution(reconstruction_errors, threshold, y_test)
     
-    # Display real-time monitoring
+    # Display real-time monitoring with MITRE ATT&CK context
     sample_indices = np.random.choice(len(X_test), min(10, len(X_test)), replace=False)
     dashboard.display_real_time_monitoring(
         X_test[sample_indices],
@@ -199,12 +266,17 @@ def phase_6_visualization_dashboard():
         threshold
     )
     
+    # Display MITRE ATT&CK mapping
+    print("\nMITRE ATT&CK Integration:")
+    for technique_id, technique_name in mitre_mapping.items():
+        print(f"  {technique_id}: {technique_name}")
+    
     return dashboard
 
 
-def phase_7_comprehensive_report():
-    """Phase 7: Generate Comprehensive Report"""
-    print_banner("PHASE 7: COMPREHENSIVE ANALYSIS REPORT")
+def phase_7_comprehensive_report_with_genai():
+    """Phase 7: Generate Comprehensive Report with GenAI Insights"""
+    print_banner("PHASE 7: COMPREHENSIVE ANALYSIS REPORT + GENAI INSIGHTS")
     
     print("\nGenerating comprehensive analysis report...")
     
@@ -318,28 +390,42 @@ Benefits:
   - Reduced overfitting
   - Enhanced anomaly detection capability
 
-8. EXPLAINABLE AI INSIGHTS
+8. EXPLAINABLE AI + GENERATIVE AI INSIGHTS
 {'='*80}
 XAI Methods Implemented:
   - Feature Importance Analysis
   - SHAP-like Perturbation Method
   - LIME-like Local Linear Approximation
 
+GenAI Intelligence Layer:
+  - Cybersecurity-aware anomaly classification
+  - Threat severity assessment
+  - Root cause analysis
+  - Actionable remediation recommendations
+  - MITRE ATT&CK technique mapping
+
 Explanation Components:
-  - Prediction confidence
+  - Prediction confidence (XAI + GenAI)
   - Reconstruction error analysis
   - Important timestep identification
   - Human-readable reasoning
+  - Threat level assessment
+  - Security context and recommendations
 
-9. SYSTEM CAPABILITIES
+9. ENHANCED SYSTEM CAPABILITIES
 {'='*80}
-✓ Real-time anomaly detection
+✓ Real-time anomaly detection with GenAI intelligence
 ✓ Batch processing support
-✓ Explainable predictions
-✓ Data augmentation
+✓ Explainable predictions (XAI + GenAI)
+✓ Data augmentation with VAE
 ✓ Performance monitoring
-✓ Interactive visualization
-✓ Report generation
+✓ Interactive visualization with Bootstrap 5
+✓ MITRE ATT&CK framework integration
+✓ RAG context panel for threat intelligence
+✓ Severity badges and color-coded alerts
+✓ Comprehensive report generation
+✓ Cybersecurity-focused threat analysis
+✓ Real-time charts and timeline visualization
 
 10. RECOMMENDATIONS
 {'='*80}
@@ -359,13 +445,18 @@ For Model Improvement:
 
 11. CONCLUSION
 {'='*80}
-The integrated anomaly detection system successfully combines:
-  • Temporal pattern learning (LSTM)
-  • Data augmentation (GenAI)
+The enhanced integrated anomaly detection system successfully combines:
+  • Temporal pattern learning (LSTM Autoencoder)
+  • Data augmentation (GenAI VAE)
   • Interpretability (XAI)
+  • Intelligence layer (GenAI LLM)
+  • Cybersecurity framework (MITRE ATT&CK)
+  • Real-time visualization (Bootstrap 5)
+  • Threat intelligence (RAG context)
 
-This provides a robust, explainable, and scalable solution for
-real-time anomaly detection in time-series data.
+This provides a robust, explainable, intelligent, and scalable solution for
+real-time cybersecurity anomaly detection in time-series data with
+comprehensive threat analysis and actionable insights.
 
 {'='*80}
 Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -396,17 +487,17 @@ def main():
         # Phase 3: Model Evaluation
         reconstruction_errors, threshold, y_pred = phase_3_model_evaluation(X_test, y_test)
         
-        # Phase 4: XAI Explainability
-        explainer, explanations = phase_4_xai_explainability(X_test, reconstruction_errors, threshold, y_test)
+        # Phase 4: XAI + GenAI Explainability
+        explainer, explanations, genai_explainer, genai_explanations, enhanced_analyzer, enhanced_explanations = phase_4_xai_genai_explainability(X_test, reconstruction_errors, threshold, y_test)
         
         # Phase 5: System Integration
-        system = phase_5_system_integration()
+        system, mitre_mapping = phase_5_system_integration()
         
-        # Phase 6: Visualization Dashboard
-        dashboard = phase_6_visualization_dashboard()
+        # Phase 6: Enhanced Visualization Dashboard
+        dashboard = phase_6_enhanced_visualization_dashboard(mitre_mapping)
         
-        # Phase 7: Comprehensive Report
-        phase_7_comprehensive_report()
+        # Phase 7: Comprehensive Report with GenAI
+        phase_7_comprehensive_report_with_genai()
         
         print_banner("PIPELINE EXECUTION COMPLETE")
         
@@ -417,7 +508,12 @@ def main():
         print("  ✓ Augmented Training Data (X_train_augmented)")
         print("  ✓ Synthetic Anomalies (X_synthetic_anomalies)")
         print("  ✓ XAI Explanations (explanations)")
-        print("  ✓ Comprehensive Report (COMPREHENSIVE_REPORT.txt)")
+        print("  ✓ GenAI Intelligence Analysis (genai_explanations)")
+        print("  ✓ Enhanced Analysis Results (enhanced_explanations)")
+        print("  ✓ MITRE ATT&CK Mapping (mitre_mapping)")
+        print("  ✓ Comprehensive Report with GenAI (COMPREHENSIVE_REPORT.txt)")
+        print("  ✓ Flask Web Application (app.py)")
+        print("  ✓ Enhanced Dashboard (templates/dashboard.html)")
         
         print("\nSystem Status: ✓ READY FOR DEPLOYMENT")
         

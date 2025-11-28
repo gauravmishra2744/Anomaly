@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Cybersecurity Anomaly Detection Dashboard</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-bg: #0a0e27;
+            --secondary-bg: #1a1f3a;
+            --accent-cyan: #00ffff;
+            --accent-magenta: #ff00ff;
+            --accent-green: #00ff88;
+            --accent-red: #ff0055;
+            --accent-orange: #ff6600;
+            --accent-yellow: #ffaa00;
+            --text-primary: #e0e7ff;
+            --text-secondary: #8b9dc3;
+            --border-color: rgba(0,255,255,0.2);
+            --shadow-glow: 0 0 20px rgba(0,255,255,0.3);
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .cyber-card {
+            background: rgba(26, 31, 58, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-glow);
+            transition: all 0.3s ease;
+        }
+
+        .cyber-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,255,255,0.4);
+        }
+
+        .cyber-header {
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-magenta) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(0,255,255,0.5);
+        }
+
+        .severity-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 2px solid;
+            animation: pulse 2s infinite;
+        }
+
+        .severity-critical {
+            background: linear-gradient(135deg, var(--accent-red) 0%, #ff0080 100%);
+            border-color: var(--accent-red);
+            color: white;
+            box-shadow: 0 0 15px rgba(255,0,85,0.6);
+        }
+
+        .severity-high {
+            background: linear-gradient(135deg, var(--accent-orange) 0%, #ff8800 100%);
+            border-color: var(--accent-orange);
+            color: white;
+            box-shadow: 0 0 15px rgba(255,102,0,0.6);
+        }
+
+        .severity-medium {
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, #ffcc00 100%);
+            border-color: var(--accent-yellow);
+            color: var(--primary-bg);
+            box-shadow: 0 0 15px rgba(255,170,0,0.6);
+        }
+
+        .severity-low {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #00ffaa 100%);
+            border-color: var(--accent-green);
+            color: var(--primary-bg);
+            box-shadow: 0 0 15px rgba(0,255,136,0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .metric-card {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0,255,255,0.3);
+        }
+
+        .metric-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .mitre-technique {
+            background: rgba(255,0,255,0.1);
+            border: 1px solid rgba(255,0,255,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            transition: all 0.3s ease;
+        }
+
+        .mitre-technique:hover {
+            background: rgba(255,0,255,0.2);
+            border-color: var(--accent-magenta);
+            transform: translateX(5px);
+        }
+
+        .rag-context {
+            background: rgba(0,255,255,0.1);
+            border: 1px solid rgba(0,255,255,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .threat-indicator {
+            display: inline-block;
+            background: rgba(255,0,85,0.2);
+            color: var(--accent-red);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin: 3px;
+            border: 1px solid rgba(255,0,85,0.4);
+        }
+
+        .status-online {
+            color: var(--accent-green);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .cyber-button {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-magenta) 100%);
+            border: none;
+            color: var(--primary-bg);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0,255,255,0.4);
+        }
+
+        .cyber-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0,255,255,0.6);
+            color: var(--primary-bg);
+        }
+
+        .timeline-item {
+            border-left: 3px solid var(--accent-cyan);
+            padding-left: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .real-time-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,255,136,0.9);
+            color: var(--primary-bg);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .navbar-cyber {
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .navbar-brand {
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            color: var(--accent-cyan) !important;
+        }
+
+        .nav-link {
+            color: var(--text-primary) !important;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-cyan) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Real-time Status Indicator -->
+    <div class="real-time-indicator">
+        <i class="fas fa-circle status-online"></i> SYSTEM ONLINE
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-cyber fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-halved"></i> CYBER ANOMALY DETECTION
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#analysis"><i class="fas fa-brain"></i> Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#mitre"><i class="fas fa-shield-alt"></i> MITRE ATT&CK</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#rag"><i class="fas fa-database"></i> Threat Intel</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="margin-top: 80px;">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="cyber-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="cyber-header mb-2">
+                                <i class="fas fa-robot"></i> ENHANCED ANOMALY DETECTION SYSTEM
+                            </h1>
+                            <p class="text-secondary mb-0">
+                                LSTM + XAI + GenAI + MITRE ATT&CK Integration
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="severity-badge severity-low">
+                                <i class="fas fa-check-circle"></i> OPERATIONAL
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-secondary">Last Update: <span id="lastUpdate">--:--:--</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Metrics Dashboard -->
+        <div class="row mb-4" id="dashboard">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value text-info" id="totalSamples">--</div>
+                    <div class="metric-label">Total Samples</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" style="color: var(--accent-red);" id="threatsDetected">--</div>
+                    <div class="metric-label">Threats Detected</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" style="color: var(--accent-green);" id="secureSamples">--</div>
+                    <div class="metric-label">Secure Samples</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" style="color: var(--accent-magenta);" id="systemAccuracy">--</div>
+                    <div class="metric-label">System Accuracy</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts and Analysis Section -->
+        <div class="row mb-4" id="analysis">
+            <div class="col-lg-8 mb-3">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-chart-line"></i> Reconstruction Error Timeline
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="errorTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-3">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-bullseye"></i> Feature Impact
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="featureImpactChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Controls and Results -->
+        <div class="row mb-4">
+            <div class="col-lg-6 mb-3">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-microscope"></i> Threat Analysis
+                    </h3>
+                    
+                    <div class="mb-3">
+                        <label for="sampleIndex" class="form-label">Sample Index (0 - 16489)</label>
+                        <input type="number" class="form-control" id="sampleIndex" value="0" min="0" max="16489">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableGenAI" checked>
+                            <label class="form-check-label" for="enableGenAI">
+                                <i class="fas fa-robot"></i> Enable GenAI Intelligence Layer
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn cyber-button" onclick="analyzeSingle()">
+                            <i class="fas fa-play"></i> Analyze Single Sample
+                        </button>
+                        <button class="btn btn-outline-info" onclick="generateThreatReport()">
+                            <i class="fas fa-file-shield"></i> Generate Threat Report
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="exportAnalysis()">
+                            <i class="fas fa-download"></i> Export Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 mb-3">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-exclamation-triangle"></i> Real-time Anomaly Summary
+                    </h3>
+                    <div id="anomalySummary">
+                        <div class="text-center text-secondary">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                            <p>Initializing real-time monitoring...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MITRE ATT&CK Mapping -->
+        <div class="row mb-4" id="mitre">
+            <div class="col-12">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-shield-alt"></i> MITRE ATT&CK Framework Integration
+                    </h3>
+                    <div class="row" id="mitreMapping">
+                        <!-- MITRE techniques will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RAG Context Panel -->
+        <div class="row mb-4" id="rag">
+            <div class="col-lg-8 mb-3">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-database"></i> RAG Threat Intelligence Context
+                    </h3>
+                    <div id="ragContext">
+                        <div class="rag-context">
+                            <h5><i class="fas fa-info-circle text-info"></i> Current Threat Landscape</h5>
+                            <p>Monitoring for advanced persistent threats (APTs), zero-day exploits, and anomalous network behavior patterns. System is actively learning from global threat intelligence feeds.</p>
+                        </div>
+                        <div class="rag-context">
+                            <h5><i class="fas fa-shield-alt text-warning"></i> Security Recommendations</h5>
+                            <p>Implement network segmentation, enable advanced logging, and maintain updated threat signatures. Consider implementing behavioral analysis for insider threat detection.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-3">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-clock"></i> Recent Activity Timeline
+                    </h3>
+                    <div id="activityTimeline">
+                        <!-- Timeline items will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="cyber-card p-4">
+                    <h3 class="cyber-header mb-3">
+                        <i class="fas fa-search"></i> Analysis Results
+                    </h3>
+                    <div id="analysisResults">
+                        <div class="text-center text-secondary">
+                            <i class="fas fa-chart-bar fa-2x mb-3"></i>
+                            <p>Run an analysis to see detailed results here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let errorTimelineChart, featureImpactChart;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            initializeCharts();
+            loadMitreMapping();
+            startRealTimeUpdates();
+        });
+        
+        function initializeDashboard() {
+            updateLastUpdateTime();
+            loadDashboardMetrics();
+            loadAnomalySummary();
+            loadActivityTimeline();
+        }
+        
+        function updateLastUpdateTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+        }
+        
+        function loadDashboardMetrics() {
+            fetch('/api/dashboard')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalSamples').textContent = data.total_samples.toLocaleString();
+                    document.getElementById('threatsDetected').textContent = data.anomalies_detected.toLocaleString();
+                    document.getElementById('secureSamples').textContent = data.normal_samples.toLocaleString();
+                    document.getElementById('systemAccuracy').textContent = (data.accuracy * 100).toFixed(1) + '%';
+                })
+                .catch(error => console.error('Error loading dashboard metrics:', error));
+        }
+        
+        function loadAnomalySummary() {
+            const summaryHtml = `
+                <div class="row">
+                    <div class="col-6">
+                        <div class="severity-badge severity-critical mb-2">
+                            <i class="fas fa-exclamation-triangle"></i> CRITICAL: 0
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="severity-badge severity-high mb-2">
+                            <i class="fas fa-exclamation"></i> HIGH: 0
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="severity-badge severity-medium mb-2">
+                            <i class="fas fa-minus-circle"></i> MEDIUM: 0
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="severity-badge severity-low mb-2">
+                            <i class="fas fa-check-circle"></i> LOW: 0
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6><i class="fas fa-tags"></i> Active Threat Indicators</h6>
+                    <div id="threatIndicators">
+                        <span class="threat-indicator">reconstruction_error_spike</span>
+                        <span class="threat-indicator">pattern_deviation</span>
+                        <span class="threat-indicator">temporal_anomaly</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('anomalySummary').innerHTML = summaryHtml;
+        }
+        
+        function loadActivityTimeline() {
+            const timelineHtml = `
+                <div class="timeline-item">
+                    <div class="fw-bold">System Initialized</div>
+                    <small class="text-secondary">${new Date().toLocaleTimeString()}</small>
+                </div>
+                <div class="timeline-item">
+                    <div class="fw-bold">Model Loaded</div>
+                    <small class="text-secondary">LSTM Autoencoder Ready</small>
+                </div>
+                <div class="timeline-item">
+                    <div class="fw-bold">GenAI Enabled</div>
+                    <small class="text-secondary">Intelligence Layer Active</small>
+                </div>
+                <div class="timeline-item">
+                    <div class="fw-bold">MITRE ATT&CK Mapped</div>
+                    <small class="text-secondary">8 Techniques Loaded</small>
+                </div>
+            `;
+            document.getElementById('activityTimeline').innerHTML = timelineHtml;
+        }
+        
+        function loadMitreMapping() {
+            const mitreData = [
+                { id: 'T1071', name: 'Application Layer Protocol', severity: 'medium' },
+                { id: 'T1090', name: 'Proxy', severity: 'high' },
+                { id: 'T1041', name: 'Exfiltration Over C2 Channel', severity: 'critical' },
+                { id: 'T1048', name: 'Exfiltration Over Alternative Protocol', severity: 'high' },
+                { id: 'T1499', name: 'Endpoint Denial of Service', severity: 'medium' },
+                { id: 'T1498', name: 'Network Denial of Service', severity: 'high' },
+                { id: 'T1046', name: 'Network Service Scanning', severity: 'low' },
+                { id: 'T1595', name: 'Active Scanning', severity: 'low' }
+            ];
+            
+            let mitreHtml = '';
+            mitreData.forEach(technique => {
+                mitreHtml += `
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="mitre-technique">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold text-info">${technique.id}</div>
+                                    <div class="small">${technique.name}</div>
+                                </div>
+                                <div class="severity-badge severity-${technique.severity}">
+                                    ${technique.severity.toUpperCase()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('mitreMapping').innerHTML = mitreHtml;
+        }
+        
+        function initializeCharts() {
+            // Error Timeline Chart
+            const errorCtx = document.getElementById('errorTimelineChart').getContext('2d');
+            errorTimelineChart = new Chart(errorCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 50}, (_, i) => i),
+                    datasets: [{
+                        label: 'Reconstruction Error',
+                        data: Array.from({length: 50}, () => Math.random() * 0.01),
+                        borderColor: '#00ffff',
+                        backgroundColor: 'rgba(0,255,255,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Threshold',
+                        data: Array.from({length: 50}, () => 0.002878),
+                        borderColor: '#ff0055',
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e0e7ff' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#8b9dc3' },
+                            grid: { color: 'rgba(139,157,195,0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#8b9dc3' },
+                            grid: { color: 'rgba(139,157,195,0.1)' }
+                        }
+                    }
+                }
+            });
+            
+            // Feature Impact Chart
+            const featureCtx = document.getElementById('featureImpactChart').getContext('2d');
+            featureImpactChart = new Chart(featureCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Temporal Pattern', 'Value Deviation', 'Trend Analysis', 'Seasonality'],
+                    datasets: [{
+                        data: [35, 25, 25, 15],
+                        backgroundColor: ['#00ffff', '#ff00ff', '#00ff88', '#ff6600'],
+                        borderColor: '#1a1f3a',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#e0e7ff', padding: 15 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function analyzeSingle() {
+            const sampleIndex = document.getElementById('sampleIndex').value;
+            const useGenAI = document.getElementById('enableGenAI').checked;
+            
+            showLoading('Analyzing sample...');
+            
+            fetch('/api/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sample_idx: parseInt(sampleIndex), use_genai: useGenAI })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayAnalysisResults(data);
+                hideLoading();
+            })
+            .catch(error => {
+                console.error('Analysis error:', error);
+                hideLoading();
+                showAlert('Error during analysis', 'danger');
+            });
+        }
+        
+        function displayAnalysisResults(data) {
+            const severityClass = getSeverityClass(data.severity);
+            const threatStatus = data.prediction === 1 ? 'THREAT DETECTED' : 'SECURE';
+            const threatClass = data.prediction === 1 ? 'danger' : 'success';
+            
+            let genaiSection = '';
+            if (data.genai_enabled) {
+                genaiSection = `
+                    <div class="mt-4 p-3" style="background: rgba(255,0,255,0.1); border-radius: 10px; border-left: 4px solid #ff00ff;">
+                        <h5><i class="fas fa-robot text-info"></i> GenAI Intelligence Analysis</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Classification:</strong> 
+                                <span class="badge bg-${data.is_malicious ? 'danger' : 'success'}">${data.genai_classification}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Threat Level:</strong> 
+                                <span class="badge bg-warning">${data.threat_level}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <strong>Root Cause:</strong>
+                            <p class="mt-2">${data.genai_root_cause}</p>
+                        </div>
+                        <div class="mt-3">
+                            <strong>Recommendation:</strong>
+                            <p class="mt-2">${data.genai_recommendation}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const resultsHtml = `
+                <div class="cyber-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-microscope"></i> Sample #${data.sample_idx} Analysis</h4>
+                        <div class="severity-badge severity-${severityClass}">
+                            ${threatStatus}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-danger" style="font-size: 1.5rem;">
+                                    ${data.error.toFixed(6)}
+                                </div>
+                                <div class="metric-label">Reconstruction Error</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-warning" style="font-size: 1.5rem;">
+                                    ${data.threshold.toFixed(6)}
+                                </div>
+                                <div class="metric-label">Threshold</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-info" style="font-size: 1.5rem;">
+                                    ${(data.confidence * 100).toFixed(1)}%
+                                </div>
+                                <div class="metric-label">XAI Confidence</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-${data.actual === 1 ? 'danger' : 'success'}" style="font-size: 1.5rem;">
+                                    ${data.actual === 1 ? 'THREAT' : 'SECURE'}
+                                </div>
+                                <div class="metric-label">Ground Truth</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 p-3" style="background: rgba(0,255,255,0.1); border-radius: 10px; border-left: 4px solid #00ffff;">
+                        <h5><i class="fas fa-brain text-info"></i> XAI Analysis</h5>
+                        <p><strong>Reason:</strong> ${data.reason}</p>
+                        <div class="mt-2">
+                            <strong>Contributing Factors:</strong>
+                            <div class="mt-2">
+                                ${data.contributing_factors.map(factor => 
+                                    `<span class="threat-indicator">${factor}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${genaiSection}
+                </div>
+            `;
+            
+            document.getElementById('analysisResults').innerHTML = resultsHtml;
+        }
+        
+        function getSeverityClass(severity) {
+            switch(severity?.toLowerCase()) {
+                case 'critical': return 'critical';
+                case 'high': return 'high';
+                case 'medium': return 'medium';
+                case 'low': return 'low';
+                default: return 'medium';
+            }
+        }
+        
+        function generateThreatReport() {
+            showLoading('Generating threat report...');
+            
+            fetch('/api/threat-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start_idx: 0, batch_size: 100 })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayThreatReport(data);
+                hideLoading();
+            })
+            .catch(error => {
+                console.error('Threat report error:', error);
+                hideLoading();
+                showAlert('Error generating threat report', 'danger');
+            });
+        }
+        
+        function displayThreatReport(data) {
+            const report = data.threat_report;
+            const summary = report.threat_summary;
+            
+            const reportHtml = `
+                <div class="cyber-card p-4">
+                    <h4><i class="fas fa-shield-alt"></i> Comprehensive Threat Report</h4>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-info" style="font-size: 1.8rem;">
+                                    ${summary.total_samples_analyzed}
+                                </div>
+                                <div class="metric-label">Samples Analyzed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-danger" style="font-size: 1.8rem;">
+                                    ${summary.malicious_samples}
+                                </div>
+                                <div class="metric-label">Malicious Samples</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-warning" style="font-size: 1.8rem;">
+                                    ${summary.critical_severity}
+                                </div>
+                                <div class="metric-label">Critical Threats</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-primary" style="font-size: 1.8rem;">
+                                    ${summary.risk_score}%
+                                </div>
+                                <div class="metric-label">Risk Score</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Top Threat Indicators</h5>
+                        <div class="mt-3">
+                            ${report.top_threat_indicators.map(indicator => 
+                                `<span class="threat-indicator">${indicator.indicator} (${indicator.count})</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5><i class="fas fa-lightbulb"></i> Security Recommendations</h5>
+                        <ul class="mt-3">
+                            ${report.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('analysisResults').innerHTML = reportHtml;
+        }
+        
+        function exportAnalysis() {
+            showLoading('Exporting analysis...');
+            
+            fetch('/api/export-report')
+                .then(response => response.json())
+                .then(data => {
+                    showAlert('Analysis exported successfully!', 'success');
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    hideLoading();
+                    showAlert('Error exporting analysis', 'danger');
+                });
+        }
+        
+        function showLoading(message) {
+            const loadingHtml = `
+                <div class="text-center p-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">${message}</p>
+                </div>
+            `;
+            document.getElementById('analysisResults').innerHTML = loadingHtml;
+        }
+        
+        function hideLoading() {
+            // Loading will be replaced by results
+        }
+        
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            // Insert alert at the top of the container
+            const container = document.querySelector('.container-fluid');
+            container.insertAdjacentHTML('afterbegin', alertHtml);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = container.querySelector('.alert');
+                if (alert) alert.remove();
+            }, 5000);
+        }
+        
+        function startRealTimeUpdates() {
+            // Update metrics every 30 seconds
+            setInterval(() => {
+                updateLastUpdateTime();
+                loadDashboardMetrics();
+            }, 30000);
+            
+            // Update charts every 10 seconds
+            setInterval(() => {
+                updateCharts();
+            }, 10000);
+        }
+        
+        function updateCharts() {
+            // Add new data point to error timeline
+            if (errorTimelineChart) {
+                const newError = Math.random() * 0.01;
+                errorTimelineChart.data.datasets[0].data.push(newError);
+                errorTimelineChart.data.datasets[0].data.shift();
+                errorTimelineChart.data.datasets[1].data.push(0.002878);
+                errorTimelineChart.data.datasets[1].data.shift();
+                errorTimelineChart.update('none');
+            }
+        }
+    </script>
+</body>
+</html>

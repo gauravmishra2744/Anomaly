@@ -30,7 +30,7 @@ try:
     from integrated_system import IntegratedAnomalyDetectionSystem
     from xai_explainability import TimeSeriesExplainer
     from genai_integration import EnhancedAnomalyAnalyzer, enhance_prediction_with_genai
-    from genai_explainer import explain_anomaly
+    from genai_explainer_simple import explain_anomaly
     system = IntegratedAnomalyDetectionSystem()
     genai_analyzer = EnhancedAnomalyAnalyzer()
     print("[OK] System initialized with GenAI")
@@ -44,6 +44,12 @@ except Exception as e:
 def index():
     """Home page"""
     return render_template('dashboard.html')
+
+
+@app.route('/enhanced')
+def enhanced_dashboard():
+    """Enhanced dashboard with Bootstrap 5 and advanced features"""
+    return render_template('enhanced_dashboard.html')
 
 
 @app.route('/about')

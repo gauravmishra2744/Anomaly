@@ -18,7 +18,7 @@ Date: 2025-01-22
 import numpy as np
 import logging
 from typing import Dict, List, Any, Optional
-from genai_explainer import GenAIExplainer, explain_anomaly
+from genai_explainer_simple import GenAIExplainer, explain_anomaly
 
 logger = logging.getLogger(__name__)
 
